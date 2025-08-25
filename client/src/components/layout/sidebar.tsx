@@ -23,8 +23,23 @@ const navigation = [
   { name: "Admin", href: "/admin", icon: Settings },
 ];
 
+// Persona -> allowed hrefs
+const PERSONA_ALLOWED: Record<string, string[]> = {
+  super_admin: navigation.map((n) => n.href),
+  builder: ["/dashboard", "/chat", "/projects", "/servers", "/marketplace", "/analytics", "/billing"],
+  end_user: ["/marketplace"],
+};
+
+import { useAuth } from "@/lib/auth";
+
 export default function Sidebar() {
   const [location] = useLocation();
+  const auth = useAuth();
+
+  const persona = auth.user?.persona || null;
+  const allowed = persona ? PERSONA_ALLOWED[persona] || [] : [];
+
+  const visibleNavigation = persona ? navigation.filter((item) => allowed.includes(item.href)) : [];
 
   return (
     <div className="fixed left-0 top-0 h-full w-64 bg-slate-900 text-white">
@@ -40,7 +55,7 @@ export default function Sidebar() {
       </div>
 
       <nav className="p-4 space-y-2">
-        {navigation.map((item) => {
+        {visibleNavigation.map((item) => {
           const Icon = item.icon;
           const isActive = location === item.href || (location === "/" && item.href === "/dashboard");
           
@@ -58,7 +73,7 @@ export default function Sidebar() {
               </div>
             </Link>
           );
-        })}
+  })}
       </nav>
     </div>
   );

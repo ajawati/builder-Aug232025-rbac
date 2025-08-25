@@ -63,8 +63,10 @@ export default function Admin() {
   const { data: users = [] } = useQuery<User[]>({
     queryKey: ["/api/admin/users"],
     queryFn: async () => {
-      const response = await fetch("/api/admin/users");
-      return response.json();
+      // Use apiRequest so Authorization header (token) is included and errors are thrown consistently
+      const res = await apiRequest("GET", "/api/admin/users");
+      const payload = await res.json();
+      return Array.isArray(payload) ? payload : [];
     },
   });
 
@@ -109,8 +111,10 @@ export default function Admin() {
     },
   });
 
-  // Filter users based on search and plan
-  const filteredUsers = users.filter((user) => {
+  // Normalize users to an array and filter based on search and plan
+  const userList = Array.isArray(users) ? users : [];
+
+  const filteredUsers = userList.filter((user) => {
     const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          user.username.toLowerCase().includes(searchTerm.toLowerCase());
@@ -383,10 +387,10 @@ export default function Admin() {
 
           {filteredUsers.length > 0 && (
             <div className="mt-4 flex items-center justify-between text-sm text-gray-600">
-              <p>Showing {filteredUsers.length} of {users.length} users</p>
+              <p>Showing {filteredUsers.length} of {userList.length} users</p>
               <div className="flex items-center space-x-4">
-                <span>Total Active: {users.filter(u => u.plan !== "Free").length}</span>
-                <span>Free Users: {users.filter(u => u.plan === "Free").length}</span>
+                <span>Total Active: {userList.filter(u => u.plan !== "Free").length}</span>
+                <span>Free Users: {userList.filter(u => u.plan === "Free").length}</span>
               </div>
             </div>
           )}

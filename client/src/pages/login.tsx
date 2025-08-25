@@ -22,9 +22,11 @@ export default function LoginPage() {
     try {
       const response = await apiRequest("POST", "/api/auth/login", { email, password });
       const data = await response.json();
-      
+      // Store token in localStorage for future requests
+      if (data.token) {
+        localStorage.setItem("authToken", data.token);
+      }
       login(data.user);
-      
       toast({
         title: "Welcome back!",
         description: "You have successfully logged in.",

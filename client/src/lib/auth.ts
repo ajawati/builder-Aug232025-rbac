@@ -1,5 +1,7 @@
 import { create } from 'zustand';
-import { type User } from '@shared/schema';
+import { type User as SharedUser } from '@shared/schema';
+
+export type User = SharedUser & { persona: string };
 
 interface AuthState {
   user: User | null;

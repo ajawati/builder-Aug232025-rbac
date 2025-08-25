@@ -12,12 +12,14 @@ export interface IStorage {
 
   // Projects
   getProjects(userId: string): Promise<Project[]>;
+  getAllProjects(): Promise<Project[]>;
   getProject(id: string): Promise<Project | undefined>;
   createProject(project: InsertProject): Promise<Project>;
   updateProject(id: string, updates: Partial<Project>): Promise<Project | undefined>;
 
   // MCP Servers
   getMcpServers(userId: string): Promise<McpServer[]>;
+  getAllMcpServers(): Promise<McpServer[]>;
   getMcpServer(id: string): Promise<McpServer | undefined>;
   createMcpServer(server: InsertMcpServer): Promise<McpServer>;
   updateMcpServer(id: string, updates: Partial<McpServer>): Promise<McpServer | undefined>;
@@ -53,6 +55,8 @@ export class MemStorage implements IStorage {
       password: "demo123", // In real app, this would be hashed
       name: "Sarah Johnson",
       plan: "Professional",
+  persona: "builder",
+  tenant: "tenant-demo",
       createdAt: new Date(),
     };
     this.users.set(demoUser.id, demoUser);
@@ -66,6 +70,8 @@ export class MemStorage implements IStorage {
         password: "password123",
         name: "John Smith",
         plan: "Free",
+  persona: "end_user",
+  tenant: "tenant-acme",
         createdAt: new Date("2024-12-15"),
       },
       {
@@ -75,6 +81,8 @@ export class MemStorage implements IStorage {
         password: "password123",
         name: "Alice Cooper",
         plan: "Professional",
+  persona: "builder",
+  tenant: "tenant-acme",
         createdAt: new Date("2024-12-14"),
       },
       {
@@ -84,6 +92,8 @@ export class MemStorage implements IStorage {
         password: "password123",
         name: "Mike Wilson",
         plan: "Enterprise",
+  persona: "super_admin",
+  tenant: "tenant-acme",
         createdAt: new Date("2024-12-13"),
       },
       {
@@ -93,6 +103,8 @@ export class MemStorage implements IStorage {
         password: "password123",
         name: "Emma Brown",
         plan: "Professional",
+  persona: "end_user",
+  tenant: "tenant-demo",
         createdAt: new Date("2024-12-12"),
       },
     ];
@@ -305,6 +317,8 @@ export class MemStorage implements IStorage {
       ...insertUser,
       id,
       plan: insertUser.plan || "free",
+  persona: insertUser.persona || "end_user",
+  tenant: insertUser.tenant || null,
       createdAt: new Date()
     };
     this.users.set(id, user);
@@ -327,6 +341,10 @@ export class MemStorage implements IStorage {
   // Projects
   async getProjects(userId: string): Promise<Project[]> {
     return Array.from(this.projects.values()).filter(project => project.userId === userId);
+  }
+
+  async getAllProjects(): Promise<Project[]> {
+    return Array.from(this.projects.values());
   }
 
   async getProject(id: string): Promise<Project | undefined> {
@@ -363,6 +381,10 @@ export class MemStorage implements IStorage {
   // MCP Servers
   async getMcpServers(userId: string): Promise<McpServer[]> {
     return Array.from(this.mcpServers.values()).filter(server => server.userId === userId);
+  }
+
+  async getAllMcpServers(): Promise<McpServer[]> {
+    return Array.from(this.mcpServers.values());
   }
 
   async getMcpServer(id: string): Promise<McpServer | undefined> {

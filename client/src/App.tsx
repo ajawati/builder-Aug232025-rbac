@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -17,13 +17,23 @@ import Admin from "@/pages/admin";
 import MainLayout from "@/components/layout/main-layout";
 import NotFound from "@/pages/not-found";
 
-function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
-  const { isAuthenticated } = useAuth();
-  
-  if (!isAuthenticated) {
+function ProtectedRoute({ component: Component, allowedPersonas }: { component: React.ComponentType, allowedPersonas?: string[] }) {
+  const auth = useAuth();
+  const [, setProtectedLocation] = useLocation();
+  if (!auth.isAuthenticated) {
     return <LoginPage />;
   }
-  
+  if (allowedPersonas && auth.user && !allowedPersonas.includes(auth.user.persona)) {
+    // Super admin should have access to all pages by default
+    if (auth.user.persona === 'super_admin') {
+      // allow through
+    } else {
+      // redirect other personas to their respective dashboards
+      if (auth.user.persona === 'builder') setProtectedLocation('/dashboard');
+      else setProtectedLocation('/marketplace');
+      return null;
+    }
+  }
   return (
     <MainLayout>
       <Component />
@@ -32,19 +42,29 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
 }
 
 function Router() {
-  const { isAuthenticated } = useAuth();
-  
+  const auth = useAuth();
+  const [, setRouterLocation] = useLocation();
+
+  // After login, redirect to persona dashboard
+  if (auth.isAuthenticated && auth.user) {
+    if (window.location.pathname === "/" || window.location.pathname === "/login") {
+      if (auth.user.persona === 'super_admin') setRouterLocation('/admin');
+      else if (auth.user.persona === 'builder') setRouterLocation('/dashboard');
+      else setRouterLocation('/marketplace');
+    }
+  }
+
   return (
     <Switch>
-      <Route path="/" component={() => isAuthenticated ? <ProtectedRoute component={Dashboard} /> : <LoginPage />} />
-      <Route path="/dashboard" component={() => <ProtectedRoute component={Dashboard} />} />
-      <Route path="/chat" component={() => <ProtectedRoute component={ChatDevelopment} />} />
-      <Route path="/projects" component={() => <ProtectedRoute component={Projects} />} />
-      <Route path="/servers" component={() => <ProtectedRoute component={MCPServers} />} />
-      <Route path="/marketplace" component={() => <ProtectedRoute component={Marketplace} />} />
-      <Route path="/analytics" component={() => <ProtectedRoute component={Analytics} />} />
-      <Route path="/billing" component={() => <ProtectedRoute component={Billing} />} />
-      <Route path="/admin" component={() => <ProtectedRoute component={Admin} />} />
+      <Route path="/" component={() => auth.isAuthenticated ? <ProtectedRoute component={Dashboard} allowedPersonas={["builder"]} /> : <LoginPage />} />
+      <Route path="/dashboard" component={() => <ProtectedRoute component={Dashboard} allowedPersonas={["builder"]} />} />
+      <Route path="/chat" component={() => <ProtectedRoute component={ChatDevelopment} allowedPersonas={["builder"]} />} />
+      <Route path="/projects" component={() => <ProtectedRoute component={Projects} allowedPersonas={["builder"]} />} />
+      <Route path="/servers" component={() => <ProtectedRoute component={MCPServers} allowedPersonas={["builder"]} />} />
+      <Route path="/marketplace" component={() => <ProtectedRoute component={Marketplace} allowedPersonas={["end_user","builder"]} />} />
+      <Route path="/analytics" component={() => <ProtectedRoute component={Analytics} allowedPersonas={["builder"]} />} />
+      <Route path="/billing" component={() => <ProtectedRoute component={Billing} allowedPersonas={["builder"]} />} />
+      <Route path="/admin" component={() => <ProtectedRoute component={Admin} allowedPersonas={["super_admin"]} />} />
       <Route component={NotFound} />
     </Switch>
   );

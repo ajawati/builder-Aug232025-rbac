@@ -10,6 +10,8 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   name: text("name").notNull(),
   plan: text("plan").notNull().default("free"),
+  persona: text("persona").notNull().default("end_user"), // 'super_admin', 'builder', 'end_user'
+  tenant: text("tenant"), // optional tenant/org id for multi-tenant scoping
   createdAt: timestamp("created_at").defaultNow(),
 });
 
